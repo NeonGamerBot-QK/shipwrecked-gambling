@@ -222,7 +222,7 @@ io.on("connection", (socket) => {
       socket.emit("error", { message: "Invalid display name" });
       return;
     }
-    const dbEntry = await keyv.get(email);
+    const dbEntry = await keyv.get(email) || { shell_count: 0 };
     const player = players.get(socket.id);
     player.displayName = displayName;
     player.email = email;
