@@ -22,137 +22,126 @@
         <div id="app-status" aria-live="polite" class="text-sm text-slate-400">Status: idle</div>
     </header>
 
-    <main class="grid grid-cols-1 lg:[grid-template-columns:minmax(260px,360px)_1fr] gap-4 p-4 items-start">
+    <main class="grid grid-cols-1 gap-4 p-4 items-start lg:grid-cols-[1fr_260px]">
         <!-- Lobby Section -->
-        <section id="lobby" aria-label="Lobby" class="bg-white/5 border border-white/10 rounded-xl p-3">
-            <h2 class="text-lg font-semibold mb-2">Lobby</h2>
+        <section id="lobby" aria-label="Lobby" class="bg-white/5 border border-white/10 rounded-xl p-6">
+            <h2 class="text-lg font-semibold mb-4">Join Game</h2>
 
-            <div id="identity" class="mb-2">
-                <label for="display-name" class="block text-slate-400 text-sm mb-1">Display Name</label>
+            <div id="identity" class="mb-4">
+                <label for="display-name" class="block text-slate-400 text-sm mb-2">Display Name</label>
                 <input id="display-name" name="displayName" type="text" placeholder="Your name" autocomplete="off"
-                    class="w-full max-w-sm rounded-md border border-white/20 bg-white/10 px-3 py-2" />
+                    class="w-full rounded-md border border-white/20 bg-white/10 px-3 py-2" />
             </div>
 
-            <div id="lobby-controls" class="grid gap-2">
-                <form id="create-form" class="flex flex-wrap items-center gap-2">
-                    <button type="submit" id="create-table"
-                        class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Create
-                        Table</button>
-                </form>
-
-                <form id="join-form" class="flex flex-wrap items-center gap-2">
-                    <label for="room-code" class="text-slate-400 text-sm">Room Code</label>
-                    <input id="room-code" name="roomCode" type="text" placeholder="e.g. ABC123" autocomplete="off"
-                        class="rounded-md border border-white/20 bg-white/10 px-3 py-2" />
-                    <button type="submit" id="join-table"
-                        class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Join
-                        Table</button>
-                </form>
-            </div>
-
-            <div id="rooms" class="mt-3">
-                <h3 class="font-medium mb-1">Available Rooms</h3>
-                <ul id="rooms-list" aria-live="polite" class="grid gap-1 list-none p-0 m-0"></ul>
-                <!-- TODO: Populate rooms list from server later -->
+            <div id="lobby-controls" class="grid gap-3">
+                <button id="join-game"
+                    class="w-full rounded-md border border-white/20 bg-white/10 px-4 py-3 hover:bg-white/15 font-medium">Join Central Table</button>
             </div>
         </section>
 
         <!-- Table Section: dealer, virtual surface, players, actions -->
-        <section id="table" aria-label="Table" hidden class="bg-white/5 border border-white/10 rounded-xl p-3">
-            <h2 class="text-lg font-semibold mb-2">Table</h2>
+        <section id="table" aria-label="Table" hidden class="bg-white/5 border border-white/10 rounded-xl p-6">
+            <h2 class="text-lg font-semibold mb-4">Central Table</h2>
 
-            <div id="table-meta" class="mb-2 text-slate-400">
-                <span id="table-code-label">Room:</span>
-                <strong id="table-code-value">—</strong>
-            </div>
+            <div class="table-stage">
+                <div id="table-viewport" aria-label="Virtual table">
+                    <div id="table-surface" role="img" aria-label="Blackjack table surface">
+                        <div id="table-markings" aria-hidden="true">
+                            <div class="arc"></div>
+                            <div class="payout">SHIPWRECKED BLACKJACK — BLACKJACK PAYS 3 TO 2</div>
+                        </div>
 
-            <div id="table-viewport" aria-label="Virtual table">
-                <div id="table-surface" role="img" aria-label="Blackjack table surface">
-                    <div id="table-markings" aria-hidden="true">
-                        <div class="arc"></div>
-                        <div class="payout">SHIPWRECKED BLACKJACK — BLACKJACK PAYS 3 TO 2</div>
+                        <div id="dealer">
+                            <h3 class="font-medium">Dealer</h3>
+                            <div id="dealer-hand" class="hand" aria-live="polite"></div>
+                            <div id="dealer-total" aria-live="polite">Total: —</div>
+                        </div>
+
+                        <!-- Seat placeholders (for quick visual reference; actual players render dynamically) -->
+                        <ul id="seats" aria-label="Seats">
+                            <li class="seat" data-seat="1">
+                                <div class="bet-spot" aria-hidden="true"></div>
+                                <div class="meta">
+                                    <span class="seat-name">Open Seat</span>
+                                    <span class="seat-chips">—</span>
+                                </div>
+                            </li>
+                            <li class="seat" data-seat="2">
+                                <div class="bet-spot" aria-hidden="true"></div>
+                                <div class="meta">
+                                    <span class="seat-name">Open Seat</span>
+                                    <span class="seat-chips">—</span>
+                                </div>
+                            </li>
+                            <li class="seat" data-seat="3">
+                                <div class="bet-spot" aria-hidden="true"></div>
+                                <div class="meta">
+                                    <span class="seat-name">Open Seat</span>
+                                    <span class="seat-chips">—</span>
+                                </div>
+                            </li>
+                            <li class="seat" data-seat="4">
+                                <div class="bet-spot" aria-hidden="true"></div>
+                                <div class="meta">
+                                    <span class="seat-name">Open Seat</span>
+                                    <span class="seat-chips">—</span>
+                                </div>
+                            </li>
+                            <li class="seat" data-seat="5">
+                                <div class="bet-spot" aria-hidden="true"></div>
+                                <div class="meta">
+                                    <span class="seat-name">Open Seat</span>
+                                    <span class="seat-chips">—</span>
+                                </div>
+                            </li>
+                            <li class="seat" data-seat="6">
+                                <div class="bet-spot" aria-hidden="true"></div>
+                                <div class="meta">
+                                    <span class="seat-name">Open Seat</span>
+                                    <span class="seat-chips">—</span>
+                                </div>
+                            </li>
+                        </ul>
+
+                        <!-- Players container (dynamic) -->
+                        <div id="players" aria-label="Players"></div>
                     </div>
-
-                    <div id="dealer" class="text-center">
-                        <h3 class="font-medium">Dealer</h3>
-                        <div id="dealer-hand" class="hand" aria-live="polite"></div>
-                        <div id="dealer-total" aria-live="polite" class="text-slate-400 text-sm">Total: —</div>
-                    </div>
-
-                    <!-- Seat placeholders (for quick visual reference; actual players render dynamically) -->
-                    <ul id="seats" aria-label="Seats">
-                        <li class="seat" data-seat="1">
-                            <div class="bet-spot" aria-hidden="true"></div>
-                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
-                            </div>
-                        </li>
-                        <li class="seat" data-seat="2">
-                            <div class="bet-spot" aria-hidden="true"></div>
-                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
-                            </div>
-                        </li>
-                        <li class="seat" data-seat="3">
-                            <div class="bet-spot" aria-hidden="true"></div>
-                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
-                            </div>
-                        </li>
-                        <li class="seat" data-seat="4">
-                            <div class="bet-spot" aria-hidden="true"></div>
-                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
-                            </div>
-                        </li>
-                        <li class="seat" data-seat="5">
-                            <div class="bet-spot" aria-hidden="true"></div>
-                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
-                            </div>
-                        </li>
-                        <li class="seat" data-seat="6">
-                            <div class="bet-spot" aria-hidden="true"></div>
-                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
-                            </div>
-                        </li>
-                    </ul>
-
-                    <!-- Players container (dynamic) -->
-                    <div id="players" aria-label="Players"></div>
                 </div>
             </div>
 
-            <div id="betting" class="mt-3 flex flex-wrap items-center gap-2">
+            <div id="betting" class="mb-4 flex flex-wrap items-center gap-3 bg-white/5 rounded-lg p-4">
                 <h3 class="font-medium">Betting</h3>
-                <label for="bet-amount" class="text-slate-400 text-sm">Bet</label>
+                <label for="bet-amount" class="text-slate-400 text-sm">Bet Amount</label>
                 <input id="bet-amount" name="betAmount" type="number" min="1" step="1" placeholder="10"
                     class="rounded-md border border-white/20 bg-white/10 px-3 py-2 w-24" />
                 <button id="place-bet" disabled
                     class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Place
                     Bet</button>
-                <!-- TODO: Enable when betting phase starts -->
             </div>
 
-            <div id="actions" aria-label="Player Actions" class="mt-3 flex flex-wrap items-center gap-2">
+            <div id="actions" aria-label="Player Actions" class="flex flex-wrap items-center gap-3 bg-white/5 rounded-lg p-4">
                 <button id="btn-hit" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Hit</button>
+                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Hit</button>
                 <button id="btn-stand" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Stand</button>
+                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Stand</button>
                 <button id="btn-double" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Double</button>
+                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Double</button>
                 <button id="btn-split" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Split</button>
-                <!-- TODO: Enable/disable based on game state and hand -->
+                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Split</button>
             </div>
         </section>
 
         <!-- Chat Section -->
         <section id="chat" aria-label="Chat" hidden class="bg-white/5 border border-white/10 rounded-xl p-3">
-            <h2 class="text-lg font-semibold mb-2">Table Chat</h2>
+            <h2 class="text-base font-semibold mb-2">Chat</h2>
             <ul id="messages" aria-live="polite"
-                class="list-none m-0 p-2 min-h-[120px] max-h-[240px] overflow-auto bg-black/20 border border-white/10 rounded-lg">
+                class="list-none m-0 p-2 min-h-[100px] max-h-[200px] overflow-auto bg-black/20 border border-white/10 rounded-lg text-sm">
             </ul>
-            <div id="chat-input" class="mt-2 flex items-center gap-2">
-                <input id="message-input" type="text" placeholder="Type a message…" autocomplete="off"
-                    class="flex-1 rounded-md border border-white/20 bg-white/10 px-3 py-2" />
+            <div id="chat-input" class="mt-2 flex flex-col gap-2">
+                <input id="message-input" type="text" placeholder="Type message…" autocomplete="off"
+                    class="w-full rounded-md border border-white/20 bg-white/10 px-2 py-1 text-sm" />
                 <button id="send-message"
-                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Send</button>
+                    class="w-full rounded-md border border-white/20 bg-white/10 px-2 py-1 hover:bg-white/15 text-sm">Send</button>
             </div>
         </section>
     </main>
@@ -194,13 +183,9 @@
 
             // Lobby controls
             const displayNameEl = document.getElementById('display-name');
-            const createFormEl = document.getElementById('create-form');
-            const joinFormEl = document.getElementById('join-form');
-            const roomCodeEl = document.getElementById('room-code');
-            const roomsListEl = document.getElementById('rooms-list');
+            const joinGameEl = document.getElementById('join-game');
 
             // Table elements
-            const tableCodeValueEl = document.getElementById('table-code-value');
             const dealerHandEl = document.getElementById('dealer-hand');
             const dealerTotalEl = document.getElementById('dealer-total');
             const playersEl = document.getElementById('players');
@@ -256,19 +241,15 @@
             }
 
             // Placeholder navigation (to be replaced when server events are added)
-            createFormEl.addEventListener('submit', function (e) {
+            joinGameEl.addEventListener('click', function (e) {
                 e.preventDefault();
-                setStatus('creating table…');
-                // TODO: Request server to create a room; receive room code
-                tableCodeValueEl.textContent = 'TBD';
-                showTable();
-            });
-
-            joinFormEl.addEventListener('submit', function (e) {
-                e.preventDefault();
-                setStatus('joining table…');
-                // TODO: Request server to join roomCodeEl.value
-                tableCodeValueEl.textContent = roomCodeEl.value || '—';
+                const displayName = displayNameEl.value.trim();
+                if (!displayName) {
+                    alert('Please enter a display name');
+                    return;
+                }
+                setStatus('joining central table…');
+                // TODO: Request server to join central room with display name
                 showTable();
             });
 

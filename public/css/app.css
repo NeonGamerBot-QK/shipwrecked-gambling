@@ -1,4 +1,12 @@
 /* Custom styles for Shipwrecked Blackjack virtual table (kept minimal; Tailwind used for layout/ui) */
+.table-stage {
+  position: relative;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 16 / 9;
+  /* allows children to fill and maintain ratio */
+}
 :root {
   --felt-0: #0b6b3a;
   --felt-1: #0f8a4a;
@@ -10,17 +18,21 @@
 #table-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 16/9;
+  height: 100%;
   display: grid;
   place-items: center;
   contain: layout paint style;
+  overflow: hidden;
 }
 
 /* Felt surface with elliptical shape */
 #table-surface {
   position: relative;
-  width: min(100%, 1100px);
-  height: min(100%, 620px);
+  width: 100%;
+  height: 100%;
+  aspect-ratio: inherit;
+  padding: 0;
+  min-height: 0;
   border-radius: 50% / 35%;
   background: radial-gradient(
     120% 120% at 50% 30%,
@@ -31,7 +43,7 @@
     0 20px 60px rgba(0, 0, 0, 0.45),
     inset 0 8px 24px rgba(0, 0, 0, 0.5);
   outline: 2px solid rgba(0, 0, 0, 0.35);
-  overflow: hidden;
+  overflow: visible;
   will-change: transform;
 }
 
@@ -55,6 +67,7 @@
 #table-markings {
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
   text-align: center;
 }
@@ -85,9 +98,11 @@
 /* Dealer */
 #dealer {
   position: absolute;
-  top: 10%;
   left: 50%;
+  top: 8%;
   transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
   display: grid;
   place-items: center;
   gap: 6px;
@@ -110,14 +125,19 @@
 #seats {
   position: absolute;
   inset: 0;
+  z-index: 3;
+  pointer-events: none;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 .seat {
   position: absolute;
-  width: clamp(120px, 16vw, 170px);
-  aspect-ratio: 3/2;
+  width: clamp(96px, 14%, 160px);
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: auto;
   display: grid;
   grid-template-rows: 1fr auto;
   place-items: center;
