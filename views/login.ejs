@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shipwrecked Blackjack — Multiplayer</title>
+    <meta name="theme-color" content="#0b6b3a" />
+    <!-- <script src="/node_modules/socket.io/client-dist/socket.io.min.js"></script> -->
+    <!-- Tailwind (CDN for hackathon simplicity) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <!-- Custom app CSS -->
+</head>
+
+<body>
+    <div class="hero bg-base-200 min-h-screen">
+        <div class="hero-content flex-col lg:flex-row-reverse">
+            <div class="text-center lg:text-left">
+                <h1 class="text-5xl font-bold">Login now!</h1>
+                <p class="py-6">
+                    Login with your email to gamble!
+                </p>
+            </div>
+            <div class="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
+                <div class="card-body">
+                    <fieldset class="fieldset">
+                        <label class="label">Email</label>
+                        <input type="email" class="input" placeholder="Email" id="email" />
+                        <button class="btn btn-neutral mt-4" id="sub-btn">Login</button>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    const btn = document.getElementById("sub-btn");
+    const email = document.getElementById('email')
+    btn.onclick = () => {
+        fetch('/send-link', {
+            headers: {
+                "Content-Type": "application/json"
+            },
+            method: "POST",
+            body: JSON.stringify({ email: email.value }),
+        }).then((r) => {
+            if (r.ok) {
+                alert("Sent email!")
+            } else {
+                alert("Email failed")
+            }
+        })
+    }
+</script>
+
+</html>

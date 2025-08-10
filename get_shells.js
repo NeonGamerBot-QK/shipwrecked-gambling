@@ -1,5 +1,3 @@
-require('dotenv/config')
-// progressMetricsByEmailSimple.js
 const { Client } = require('pg');
 
 const client = new Client(process.env.SHIPWRECKED_PSQL_URL);
@@ -182,4 +180,3 @@ async function calculateProgressMetricsByEmail(userEmail) {
 }
 
 module.exports = { calculateProgressMetricsByEmail };
-calculateProgressMetricsByEmail('neon+no@saahild.com').then(console.log);
