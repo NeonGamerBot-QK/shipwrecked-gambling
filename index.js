@@ -4,22 +4,22 @@ const app = express();
 const http = require("http");
 const server = http.createServer(app);
 const io = require("socket.io")(server);
-const passport = require('passport');
-const CustomStrategy = require('passport-custom').Strategy;
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const session = require('express-session');
-var FileStore = require('session-file-store')(session);
-const Keyv = require('keyv');
-const SQLite = require('@keyv/sqlite');
+const passport = require("passport");
+const CustomStrategy = require("passport-custom").Strategy;
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const session = require("express-session");
+var FileStore = require("session-file-store")(session);
+const Keyv = require("keyv");
+const SQLite = require("@keyv/sqlite");
 const sqliteAdapter = new SQLite.default({
-  uri: 'sqlite://./my-keyv-database.db'  // database file path
+  uri: "sqlite://./my-keyv-database.db", // database file path
 });
 
 // Initialize Keyv with SQLite adapter
 const keyv = new Keyv.Keyv({ store: sqliteAdapter });
 
-const { calculateProgressMetricsByEmail } = require('./get_shells');
+const { calculateProgressMetricsByEmail } = require("./get_shells");
 
 function calculateWinnings(guessType, guessNumber, actualNumber, bet) {
   let multiplier = 0;
@@ -127,11 +127,13 @@ app.get("/gamble", (req, res) => {
   }
   res.render("index", { title: "Shipwrecked" });
 });
-app.get('/my-shells-shipwrecked', async (req, res) => {
+app.get("/my-shells-shipwrecked", async (req, res) => {
   if (!req.session.passport) {
-    return res.redirect('/login');
+    return res.redirect("/login");
   }
-  const shellD = await calculateProgressMetricsByEmail(req.session.passport.user);
+  const shellD = await calculateProgressMetricsByEmail(
+    req.session.passport.user,
+  );
   // get user db entry
   const user = await keyv.get(req.session.passport.user);
   if (!user) {
@@ -139,25 +141,22 @@ app.get('/my-shells-shipwrecked', async (req, res) => {
       shell_count: shellD.availableShells,
       already_checked_shipwrecked_site: true,
       email: req.session.passport.user,
-      payouts: []
-    })
+      payouts: [],
+    });
   }
 
   res.json({
-    shells: shellD.availableShells
-  })
-})
-app.get('/login', (req, res) => {
-  res.render('login')
-})
+    shells: shellD.availableShells,
+  });
+});
+app.get("/login", (req, res) => {
+  res.render("login");
+});
 
 io.on("connection", (socket) => {
   // socket.emit
   // socket.on
-  socket.on("get balance", () => {
-
-  })
-
+  socket.on("get balance", () => {});
 });
 server.listen(3001, () => {
   console.log(`Server is running on http://localhost:3001`);
