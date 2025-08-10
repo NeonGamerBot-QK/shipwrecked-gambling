@@ -98,6 +98,13 @@ passport.deserializeUser(async (email, done) => {
   // "For demo" womp womp
   done(null, { email });
 });
+app.get('/', (req, res) => {
+  if (req.session.passport) {
+    res.redirect('/gamble')
+  } else {
+    res.redirect('/login')
+  }
+})
 passport.use(
   "magic-link",
   new CustomStrategy((req, done) => {
