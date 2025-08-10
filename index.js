@@ -10,6 +10,15 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const session = require('express-session');
 var FileStore = require('session-file-store')(session);
+const Keyv = require('keyv');
+const SQLite = require('@keyv/sqlite');
+const sqliteAdapter = new SQLite.default({
+  uri: 'sqlite://./my-keyv-database.db'  // database file path
+});
+
+// Initialize Keyv with SQLite adapter
+const keyv = new Keyv.Keyv({ store: sqliteAdapter });
+
 const { calculateProgressMetricsByEmail } = require('./get_shells');
 
 function calculateWinnings(guessType, guessNumber, actualNumber, bet) {
@@ -50,7 +59,7 @@ app.use(session({
 
 passport.serializeUser((user, done) => {
   // create user db entry here
-
+  // keyv.set(user.email, user);
   done(null, user.email);
 });
 
@@ -58,7 +67,7 @@ passport.deserializeUser(async (email, done) => {
   // Here you would fetch user from DB by email
   // For demo just return the email as user object
   // "For demo" womp womp
-  done(null, { email, shells: await calculateProgressMetricsByEmail(email) });
+  done(null, { email });
 });
 passport.use('magic-link', new CustomStrategy((req, done) => {
   const token = req.query.token;
@@ -112,6 +121,26 @@ app.get("/gamble", (req, res) => {
   }
   res.render("index", { title: "Shipwrecked" });
 });
+app.get('/my-shells-shipwrecked', async (req, res) => {
+  if (!req.session.passport) {
+    return res.redirect('/login');
+  }
+  const shellD = await calculateProgressMetricsByEmail(req.session.passport.user);
+  // get user db entry
+  const user = await keyv.get(req.session.passport.user);
+  if (!user) {
+    await keyv.set(req.session.passport.user, {
+      shell_count: shellD.availableShells,
+      already_checked_shipwrecked_site: true,
+      email: req.session.passport.user,
+      payouts: []
+    })
+  }
+
+  res.json({
+    shells: shellD.availableShells
+  })
+})
 app.get('/login', (req, res) => {
   res.render('login')
 })
@@ -119,6 +148,9 @@ app.get('/login', (req, res) => {
 io.on("connection", (socket) => {
   // socket.emit
   // socket.on
+  socket.on("get balance", () => {
+
+  })
 
 });
 server.listen(3001, () => {

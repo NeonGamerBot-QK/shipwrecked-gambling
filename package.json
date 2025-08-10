@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@keyv/sqlite": "^4.0.5",
     "dotenv": "^17.2.1",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
@@ -21,7 +22,8 @@
     "passport-custom": "^1.1.1",
     "pg": "^8.16.3",
     "session-file-store": "^1.5.0",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@types/socket.io": "^3.0.2"
