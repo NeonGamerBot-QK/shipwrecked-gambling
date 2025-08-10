@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shipwrecked Blackjack — Multiplayer</title>
+    <title>Shipwrecked Hi-Lo — Multiplayer</title>
     <meta name="theme-color" content="#0b6b3a" />
     <!-- <script src="/node_modules/socket.io/client-dist/socket.io.min.js"></script> -->
     <!-- Tailwind (CDN for hackathon simplicity) -->
@@ -18,7 +18,7 @@
     <!-- App Header -->
     <header
         class="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 py-3 border-b border-white/10 bg-white/5 backdrop-blur">
-        <h1 class="text-xl font-semibold">Shipwrecked Blackjack</h1>
+        <h1 class="text-xl font-semibold">Shipwrecked Hi-Lo</h1>
         <div id="app-status" aria-live="polite" class="text-sm text-slate-400">Status: idle</div>
     </header>
 
@@ -39,78 +39,24 @@
             </div>
         </section>
 
-        <!-- Table Section: dealer, virtual surface, players, actions -->
+        <!-- Table Section -->
         <section id="table" aria-label="Table" hidden class="bg-white/5 border border-white/10 rounded-xl p-6">
             <h2 class="text-lg font-semibold mb-4">Central Table</h2>
 
             <div class="table-stage">
                 <div id="table-viewport" aria-label="Virtual table">
-                    <div id="table-surface" role="img" aria-label="Blackjack table surface">
+                    <div id="table-surface" role="img" aria-label="Hi-Lo table surface">
                         <div id="table-markings" aria-hidden="true">
                             <div class="arc"></div>
-                            <div class="payout">SHIPWRECKED BLACKJACK — BLACKJACK PAYS 3 TO 2</div>
+                            <div class="payout">SHIPWRECKED HI-LO — CORRECT GUESS PAYS 1 TO 1</div>
                         </div>
-
-                        <div id="dealer">
-                            <h3 class="font-medium">Dealer</h3>
-                            <div id="dealer-hand" class="hand" aria-live="polite"></div>
-                            <div id="dealer-total" aria-live="polite">Total: —</div>
-                        </div>
-
-                        <!-- Seat placeholders (for quick visual reference; actual players render dynamically) -->
-                        <ul id="seats" aria-label="Seats">
-                            <li class="seat" data-seat="1">
-                                <div class="bet-spot" aria-hidden="true"></div>
-                                <div class="meta">
-                                    <span class="seat-name">Open Seat</span>
-                                    <span class="seat-chips">—</span>
-                                </div>
-                            </li>
-                            <li class="seat" data-seat="2">
-                                <div class="bet-spot" aria-hidden="true"></div>
-                                <div class="meta">
-                                    <span class="seat-name">Open Seat</span>
-                                    <span class="seat-chips">—</span>
-                                </div>
-                            </li>
-                            <li class="seat" data-seat="3">
-                                <div class="bet-spot" aria-hidden="true"></div>
-                                <div class="meta">
-                                    <span class="seat-name">Open Seat</span>
-                                    <span class="seat-chips">—</span>
-                                </div>
-                            </li>
-                            <li class="seat" data-seat="4">
-                                <div class="bet-spot" aria-hidden="true"></div>
-                                <div class="meta">
-                                    <span class="seat-name">Open Seat</span>
-                                    <span class="seat-chips">—</span>
-                                </div>
-                            </li>
-                            <li class="seat" data-seat="5">
-                                <div class="bet-spot" aria-hidden="true"></div>
-                                <div class="meta">
-                                    <span class="seat-name">Open Seat</span>
-                                    <span class="seat-chips">—</span>
-                                </div>
-                            </li>
-                            <li class="seat" data-seat="6">
-                                <div class="bet-spot" aria-hidden="true"></div>
-                                <div class="meta">
-                                    <span class="seat-name">Open Seat</span>
-                                    <span class="seat-chips">—</span>
-                                </div>
-                            </li>
-                        </ul>
-
-                        <!-- Players container (dynamic) -->
-                        <div id="players" aria-label="Players"></div>
                     </div>
                 </div>
             </div>
 
             <div id="betting" class="mb-4 flex flex-wrap items-center gap-3 bg-white/5 rounded-lg p-4">
                 <h3 class="font-medium">Betting</h3>
+                <div id="bankroll" aria-live="polite" class="text-slate-300">Bankroll: —</div>
                 <label for="bet-amount" class="text-slate-400 text-sm">Bet Amount</label>
                 <input id="bet-amount" name="betAmount" type="number" min="1" step="1" placeholder="10"
                     class="rounded-md border border-white/20 bg-white/10 px-3 py-2 w-24" />
@@ -119,16 +65,28 @@
                     Bet</button>
             </div>
 
-            <div id="actions" aria-label="Player Actions" class="flex flex-wrap items-center gap-3 bg-white/5 rounded-lg p-4">
-                <button id="btn-hit" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Hit</button>
-                <button id="btn-stand" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Stand</button>
-                <button id="btn-double" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Double</button>
-                <button id="btn-split" disabled
-                    class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Split</button>
-            </div>
+            <!-- Hi-Lo Round Panel -->
+            <section id="hilo-round">
+                <div class="cards-row grid grid-cols-2 gap-4 mb-3">
+                    <div class="card-slot">
+                        <h3 class="font-medium">Current Card</h3>
+                        <div id="current-card" class="card-host min-h-[88px]"></div>
+                    </div>
+                    <div class="card-slot">
+                        <h3 class="font-medium">Next Card</h3>
+                        <div id="next-card" class="card-host min-h-[88px]"></div>
+                    </div>
+                </div>
+                <div id="round-message" class="round-message text-sm text-slate-300 mb-3" aria-live="polite"></div>
+                <div class="actions-row flex gap-2">
+                    <button id="btn-higher" disabled
+                        class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Higher</button>
+                    <button id="btn-lower" disabled
+                        class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Lower</button>
+                    <button id="btn-next-round" disabled
+                        class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Next Round</button>
+                </div>
+            </section>
         </section>
 
         <!-- Chat Section -->
@@ -147,27 +105,13 @@
     </main>
 
     <!-- Templates (for client-side rendering) -->
-    <template id="tpl-player">
-        <div class="player" data-player-id="">
-            <div class="player-header">
-                <span class="player-name"></span>
-                <span class="player-chips"></span>
-                <span class="player-bet"></span>
-            </div>
-            <div class="player-hands"></div>
-            <div class="player-total"></div>
-        </div>
-    </template>
-
     <template id="tpl-card">
         <div class="card" data-rank="" data-suit="" aria-label="Card"></div>
     </template>
 
-    <!-- Minimal bootstrap script (no networking yet) -->
     <script>
-        const socket = io()
+        const socket = io();
 
-        // Listen for connection
         socket.on("connect", () => {
             console.log("Connected to server:", socket.id);
         });
@@ -185,29 +129,23 @@
             const displayNameEl = document.getElementById('display-name');
             const joinGameEl = document.getElementById('join-game');
 
-            // Table elements
-            const dealerHandEl = document.getElementById('dealer-hand');
-            const dealerTotalEl = document.getElementById('dealer-total');
-            const playersEl = document.getElementById('players');
-
-            // Betting/action controls
+            // Betting
+            const bankrollEl = document.getElementById('bankroll');
             const betAmountEl = document.getElementById('bet-amount');
             const placeBetEl = document.getElementById('place-bet');
-            const btnHitEl = document.getElementById('btn-hit');
-            const btnStandEl = document.getElementById('btn-stand');
-            const btnDoubleEl = document.getElementById('btn-double');
-            const btnSplitEl = document.getElementById('btn-split');
 
-            // Chat
-            const messagesEl = document.getElementById('messages');
-            const messageInputEl = document.getElementById('message-input');
-            const sendMessageEl = document.getElementById('send-message');
+            // Hi-Lo Round elements
+            const currentCardEl = document.getElementById('current-card');
+            const nextCardEl = document.getElementById('next-card');
+            const roundMessageEl = document.getElementById('round-message');
+            const btnHigherEl = document.getElementById('btn-higher');
+            const btnLowerEl = document.getElementById('btn-lower');
+            const btnNextRoundEl = document.getElementById('btn-next-round');
 
             // Templates
-            const tplPlayer = document.getElementById('tpl-player');
             const tplCard = document.getElementById('tpl-card');
 
-            // Small, multiplayer-friendly update scheduler to batch DOM writes
+            // Render queue
             let q = [];
             let raf = null;
             function schedule(fn) {
@@ -240,7 +178,103 @@
                 });
             }
 
-            // Placeholder navigation (to be replaced when server events are added)
+            function setBankroll(amount) {
+                schedule(() => {
+                    bankrollEl.textContent = 'Bankroll: ' + amount;
+                });
+            }
+
+            function clearHost(el) {
+                while (el.firstChild) el.removeChild(el.firstChild);
+            }
+
+            function renderCard(hostEl, card) {
+                schedule(() => {
+                    clearHost(hostEl);
+                    if (!card) return;
+                    if (tplCard && tplCard.content) {
+                        const node = tplCard.content.firstElementChild.cloneNode(true);
+                        node.dataset.rank = card.rank;
+                        node.dataset.suit = card.suit;
+                        node.setAttribute('aria-label', card.rank + ' of ' + card.suit);
+                        hostEl.appendChild(node);
+                    } else {
+                        hostEl.innerHTML = '<div class="card"><div class="rank">' + card.rank +
+                            '</div><div class="suit" data-suit="' + card.suit + '">' + card.suit + '</div></div>';
+                    }
+                });
+            }
+
+            function setControlsForState(s) {
+                const rs = s.roundState;
+                const bankroll = s.bankroll ?? 0;
+                const betVal = parseInt(betAmountEl.value, 10);
+                const isValidBet = Number.isInteger(betVal) && betVal >= 1 && betVal <= bankroll;
+
+                if (rs === 'awaitingBet') {
+                    betAmountEl.disabled = false;
+                    placeBetEl.disabled = !isValidBet;
+                    placeBetEl.classList.toggle('opacity-50', placeBetEl.disabled);
+                    placeBetEl.classList.toggle('cursor-not-allowed', placeBetEl.disabled);
+
+                    btnHigherEl.disabled = true;
+                    btnLowerEl.disabled = true;
+                    btnNextRoundEl.disabled = true;
+                    btnHigherEl.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnLowerEl.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnNextRoundEl.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    renderCard(currentCardEl, s.currentCard);
+                    renderCard(nextCardEl, null);
+                    schedule(() => { roundMessageEl.textContent = s.message || ''; });
+                } else if (rs === 'awaitingGuess') {
+                    betAmountEl.disabled = true;
+                    placeBetEl.disabled = true;
+                    placeBetEl.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    btnHigherEl.disabled = false;
+                    btnLowerEl.disabled = false;
+                    btnNextRoundEl.disabled = true;
+                    btnHigherEl.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btnLowerEl.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btnNextRoundEl.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    renderCard(currentCardEl, s.currentCard);
+                    renderCard(nextCardEl, null);
+                    schedule(() => { roundMessageEl.textContent = s.message || 'Guess higher or lower.'; });
+                } else if (rs === 'resolved') {
+                    betAmountEl.disabled = true;
+                    placeBetEl.disabled = true;
+                    placeBetEl.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    btnHigherEl.disabled = true;
+                    btnLowerEl.disabled = true;
+                    btnNextRoundEl.disabled = false;
+                    btnHigherEl.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnLowerEl.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnNextRoundEl.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                    renderCard(currentCardEl, s.currentCard);
+                    renderCard(nextCardEl, s.lastNextCard);
+                    schedule(() => { roundMessageEl.textContent = s.message || (s.lastOutcome ? ('You ' + (s.lastOutcome === 'win' ? 'won!' : 'lost.')) : 'Round resolved.'); });
+                }
+            }
+
+            function validateBetInput(bankroll) {
+                const rs = lastState?.roundState || 'awaitingBet';
+                if (rs !== 'awaitingBet') return;
+                const val = parseInt(betAmountEl.value, 10);
+                const valid = Number.isInteger(val) && val >= 1 && val <= (bankroll ?? 0);
+                placeBetEl.disabled = !valid;
+                placeBetEl.classList.toggle('opacity-50', placeBetEl.disabled);
+                placeBetEl.classList.toggle('cursor-not-allowed', placeBetEl.disabled);
+            }
+
+            // Local state
+            let lastState = null;
+            let joinRequested = false;
+
+            // Event bindings
             joinGameEl.addEventListener('click', function (e) {
                 e.preventDefault();
                 const displayName = displayNameEl.value.trim();
@@ -249,42 +283,91 @@
                     return;
                 }
                 setStatus('joining central table…');
-                // TODO: Request server to join central room with display name
-                showTable();
+                joinRequested = true;
+                socket.emit('joinTable', { displayName });
+            });
+
+            betAmountEl.addEventListener('input', function () {
+                validateBetInput(lastState?.bankroll ?? 0);
             });
 
             placeBetEl.addEventListener('click', function () {
-                // TODO: Send betAmountEl.value to server
+                const amount = parseInt(betAmountEl.value, 10);
+                if (!Number.isInteger(amount) || amount < 1) return;
+                socket.emit('placeBet', { amount });
             });
 
-            btnHitEl.addEventListener('click', function () {
-                // TODO: Send "hit"
+            btnHigherEl.addEventListener('click', function () {
+                socket.emit('guess', { choice: 'higher' });
             });
 
-            btnStandEl.addEventListener('click', function () {
-                // TODO: Send "stand"
+            btnLowerEl.addEventListener('click', function () {
+                socket.emit('guess', { choice: 'lower' });
             });
 
-            btnDoubleEl.addEventListener('click', function () {
-                // TODO: Send "double"
+            btnNextRoundEl.addEventListener('click', function () {
+                socket.emit('nextRound', {});
             });
 
-            btnSplitEl.addEventListener('click', function () {
-                // TODO: Send "split"
+            // Socket handlers
+            socket.on('state', (s) => {
+                lastState = s;
+                setBankroll(s.bankroll ?? 0);
+                setStatus(s.roundState || 'idle');
+                if (joinRequested) showTable();
+                setControlsForState(s);
             });
 
+            socket.on('roundStart', (p) => {
+                setBankroll(p.bankroll ?? 0);
+                renderCard(currentCardEl, p.currentCard);
+                renderCard(nextCardEl, null);
+                schedule(() => { roundMessageEl.textContent = p.message || 'Guess higher or lower.'; });
+
+                // Controls
+                betAmountEl.disabled = true;
+                placeBetEl.disabled = true;
+                placeBetEl.classList.add('opacity-50', 'cursor-not-allowed');
+                btnHigherEl.disabled = false;
+                btnLowerEl.disabled = false;
+                btnNextRoundEl.disabled = true;
+                btnHigherEl.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnLowerEl.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnNextRoundEl.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+
+            socket.on('roundResult', (p) => {
+                setBankroll(p.bankroll ?? 0);
+                renderCard(currentCardEl, p.currentCard);
+                renderCard(nextCardEl, p.nextCard);
+                schedule(() => { roundMessageEl.textContent = p.message || (p.outcome === 'win' ? 'You won!' : 'You lost.'); });
+
+                btnHigherEl.disabled = true;
+                btnLowerEl.disabled = true;
+                btnNextRoundEl.disabled = false;
+                btnHigherEl.classList.add('opacity-50', 'cursor-not-allowed');
+                btnLowerEl.classList.add('opacity-50', 'cursor-not-allowed');
+                btnNextRoundEl.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+
+            socket.on('error', (err) => {
+                const msg = (err && err.message) ? err.message : 'An error occurred.';
+                schedule(() => { roundMessageEl.textContent = msg; });
+                // Server will emit a fresh 'state' after error.
+            });
+
+            // Chat (local echo placeholder)
+            const messagesEl = document.getElementById('messages');
+            const messageInputEl = document.getElementById('message-input');
+            const sendMessageEl = document.getElementById('send-message');
             sendMessageEl.addEventListener('click', function () {
                 const msg = messageInputEl.value.trim();
                 if (!msg) return;
-                // TODO: Emit chat message to server
                 const li = document.createElement('li');
                 li.textContent = msg;
                 messagesEl.appendChild(li);
                 messageInputEl.value = '';
             });
-
-            // TODO: Socket wiring (e.g., socket.io) will be added later
-            // TODO: Rendering helpers and keyed diffing will be added later
 
             // Start at the lobby
             setStatus('idle');

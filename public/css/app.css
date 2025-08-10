@@ -238,3 +238,84 @@
     transition: none !important;
   }
 }
+
+/* Minimal Hi-Lo UI support styles (additive) */
+#hilo-round {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: transparent;
+  color: inherit;
+}
+
+/* Card rows and slots */
+.cards-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.card-slot {
+  min-width: 180px;
+  text-align: center;
+}
+
+.card-slot h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+/* Card hosts */
+.card-host {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Slightly larger card visual in Hi-Lo hosts without changing .card elsewhere */
+.card-host .card {
+  transform: scale(1.1);
+  transform-origin: center;
+}
+
+/* Actions */
+.actions-row {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.actions-row button {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+}
+
+.actions-row button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Messages and bankroll */
+#round-message {
+  margin-top: 10px;
+  text-align: center;
+  min-height: 1.2em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+#bankroll {
+  margin: 8px 0;
+  font-weight: 600;
+}
