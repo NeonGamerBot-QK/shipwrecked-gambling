@@ -3,7 +3,11 @@ const express = require("express");
 const app = express();
 const http = require("http");
 const server = http.createServer(app);
-const io = require("socket.io")(server);
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "*", // adjust to your frontend origin
+  },
+});
 const passport = require("passport");
 const CustomStrategy = require("passport-custom").Strategy;
 const jwt = require("jsonwebtoken");
@@ -20,22 +24,31 @@ const sqliteAdapter = new SQLite.default({
 const keyv = new Keyv.Keyv({ store: sqliteAdapter });
 
 const { calculateProgressMetricsByEmail } = require("./get_shells");
+const players = new Map(); // socketId => player object
+const gameState = {
+  // Shared table state
+  currentCard: null,
+  nextCard: null,
+  roundState: "waiting", // 'awaitingBet', 'awaitingGuess', 'resolved'
+  message: "",
+  // For simplicity, bankrolls per player stored individually
+};
 
-function calculateWinnings(guessType, guessNumber, actualNumber, bet) {
-  let multiplier = 0;
+// Utility for deck
+const suits = ["Hearts", "Diamonds", "Clubs", "Spades"];
+const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
 
-  if (guessType === "lower") {
-    if (actualNumber < guessNumber) multiplier = 2;
-  } else if (guessType === "higher") {
-    if (actualNumber > guessNumber) multiplier = 2;
-  } else if (guessType === "exact") {
-    if (actualNumber === guessNumber) multiplier = 5;
-  } else {
-    throw new Error("Invalid guess type");
-  }
-
-  return bet * multiplier;
+function drawRandomCard() {
+  const rank = ranks[Math.floor(Math.random() * ranks.length)];
+  const suit = suits[Math.floor(Math.random() * suits.length)];
+  return { rank, suit };
 }
+
+// Simple card rank order for comparison
+function rankValue(card) {
+  return ranks.indexOf(card.rank);
+}
+
 app.use(express.static("public"));
 app.use(express.json());
 
@@ -95,11 +108,11 @@ app.post("/send-link", async (req, res) => {
   if (!email) return res.status(400).send("Email required");
 
   const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "15m" });
-  const magicLink = `http://localhost:3001/magic-login?token=${token}`;
+  const magicLink = `http://shipwrecked-gamble.saahild.com/magic-login?token=${token}`;
 
   try {
     await transport.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `no-reply@saahild.com`,
       to: email,
       subject: "Your Magic Login Link",
       html: `<p>Click to log in: <a href="${magicLink}">${magicLink}</a></p>`,
@@ -125,17 +138,21 @@ app.get("/gamble", (req, res) => {
   if (!req.session.passport) {
     return res.redirect("/login");
   }
-  res.render("index", { title: "Shipwrecked" });
+  res.render("index", { title: "Shipwrecked", email: req.session.passport.user });
 });
 app.get("/my-shells-shipwrecked", async (req, res) => {
   if (!req.session.passport) {
     return res.redirect("/login");
   }
-  const shellD = await calculateProgressMetricsByEmail(
-    req.session.passport.user,
-  );
   // get user db entry
   const user = await keyv.get(req.session.passport.user);
+  if (user && req.query.onlyCreate) {
+    return res.status(403).end()
+  }
+
+  const shellD = !process.env.SHIPWRECKED_PSQL_URL ? { availableShells: 500 } : await calculateProgressMetricsByEmail(
+    req.session.passport.user,
+  );
   if (!user) {
     await keyv.set(req.session.passport.user, {
       shell_count: shellD.availableShells,
@@ -156,8 +173,166 @@ app.get("/login", (req, res) => {
 io.on("connection", (socket) => {
   // socket.emit
   // socket.on
-  socket.on("get balance", () => {});
+  console.log(`Client connected: ${socket.id}`);
+
+  // Initialize player state
+  players.set(socket.id, {
+    displayName: null,
+    bankroll: 1000, // starting bankroll
+    currentBet: 0,
+    roundState: "awaitingBet",
+    currentCard: null,
+    lastNextCard: null,
+    lastOutcome: null,
+  });
+
+  // Emit initial state
+  socket.emit("state", {
+    bankroll: 1000,
+    roundState: "awaitingBet",
+    message: "Welcome! Please join the central table.",
+  });
+
+  socket.on("joinTable", async ({ displayName, email }) => {
+    if (!displayName || typeof displayName !== "string") {
+      socket.emit("error", { message: "Invalid display name" });
+      return;
+    }
+    const dbEntry = await keyv.get(email)
+    const player = players.get(socket.id);
+    player.displayName = displayName;
+    player.email = email;
+    player.roundState = "awaitingBet";
+    player.bankroll = dbEntry.shell_count;
+    player.currentBet = 0;
+    player.currentCard = null;
+    player.lastNextCard = null;
+    player.lastOutcome = null;
+
+    // Draw initial current card for player
+    player.currentCard = drawRandomCard();
+    socket.emit("state", {
+      bankroll: player.bankroll,
+      roundState: player.roundState,
+      currentCard: player.currentCard,
+      message: "Joined the central table! Place your bet.",
+    });
+  });
+
+  socket.on("placeBet", ({ amount }) => {
+    const player = players.get(socket.id);
+    if (!player || player.roundState !== "awaitingBet") {
+      socket.emit("error", { message: "Not expecting a bet now." });
+      return;
+    }
+    if (typeof amount !== "number" || amount < 1 || amount > player.bankroll) {
+      socket.emit("error", { message: "Invalid bet amount." });
+      return;
+    }
+
+    player.currentBet = amount;
+    player.roundState = "awaitingGuess";
+
+    // Server picks the next card (hidden for now)
+    player.nextCard = drawRandomCard();
+
+    socket.emit("roundStart", {
+      bankroll: player.bankroll,
+      currentCard: player.currentCard,
+      message: "Guess higher or lower.",
+    });
+  });
+
+  socket.on("guess", async ({ choice }) => {
+    const player = players.get(socket.id);
+    if (!player || player.roundState !== "awaitingGuess") {
+      socket.emit("error", { message: "Not expecting a guess now." });
+      return;
+    }
+    if (choice !== "higher" && choice !== "lower") {
+      socket.emit("error", { message: "Invalid guess choice." });
+      return;
+    }
+
+    // Determine outcome
+    const currentVal = rankValue(player.currentCard);
+    const nextVal = rankValue(player.nextCard);
+    let outcome = "lose";
+    const dbEntry = await keyv.get(player.email)
+
+    if (nextVal === currentVal) {
+      // Tie counts as loss or push? Here treat as loss
+      outcome = "lose";
+    } else if (
+      (choice === "higher" && nextVal > currentVal) ||
+      (choice === "lower" && nextVal < currentVal)
+    ) {
+      outcome = "win";
+      player.bankroll += player.currentBet;
+      dbEntry.payouts.push({
+        amount: player.currentBet,
+        outcome
+      })
+    } else {
+      player.bankroll -= player.currentBet;
+      dbEntry.payouts.push({
+        amount: -player.currentBet,
+        outcome
+      });
+    }
+
+    dbEntry.shell_count = player.bankroll;
+    await keyv.set(player.email, dbEntry)
+    player.roundState = "resolved";
+    player.lastNextCard = player.nextCard;
+    player.lastOutcome = outcome;
+    player.currentCard = player.nextCard;
+    player.nextCard = null;
+    player.currentBet = 0;
+
+    socket.emit("roundResult", {
+      bankroll: player.bankroll,
+      currentCard: player.currentCard,
+      nextCard: player.lastNextCard,
+      outcome,
+      message: outcome === "win" ? "You won!" : "You lost.",
+    });
+  });
+
+  socket.on("nextRound", () => {
+    const player = players.get(socket.id);
+    if (!player || player.roundState !== "resolved") {
+      socket.emit("error", { message: "Cannot start next round now." });
+      return;
+    }
+    player.roundState = "awaitingBet";
+    player.currentBet = 0;
+    player.lastNextCard = null;
+    player.lastOutcome = null;
+
+    socket.emit("state", {
+      bankroll: player.bankroll,
+      roundState: player.roundState,
+      currentCard: player.currentCard,
+      message: "Place your bet to start the next round.",
+    });
+  });
+
+  socket.on("chatMessage", (message) => {
+    const displayName = players.get(socket.id).displayName || "Anonymous";
+    console.log(`Chat from ${displayName}: ${message}`);
+
+    // Broadcast to all except sender
+    socket.broadcast.emit("chatMessage", {
+      displayName,
+      message,
+    });
+  });
+  socket.on("disconnect", () => {
+    console.log(`Client disconnected: ${socket.id}`);
+    players.delete(socket.id);
+  });
 });
 server.listen(3001, () => {
-  console.log(`Server is running on http://localhost:3001`);
+  console.log(`Server is running on http://localhost:3001 (or http://shipwrecked-gamble.saahild.com)`);
 });

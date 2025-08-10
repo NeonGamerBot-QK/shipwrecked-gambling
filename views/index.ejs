@@ -35,7 +35,8 @@
 
             <div id="lobby-controls" class="grid gap-3">
                 <button id="join-game"
-                    class="w-full rounded-md border border-white/20 bg-white/10 px-4 py-3 hover:bg-white/15 font-medium">Join Central Table</button>
+                    class="w-full rounded-md border border-white/20 bg-white/10 px-4 py-3 hover:bg-white/15 font-medium">Join
+                    Central Table</button>
             </div>
         </section>
 
@@ -84,7 +85,8 @@
                     <button id="btn-lower" disabled
                         class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Lower</button>
                     <button id="btn-next-round" disabled
-                        class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Next Round</button>
+                        class="rounded-md border border-white/20 bg-white/10 px-4 py-2 opacity-50 cursor-not-allowed">Next
+                        Round</button>
                 </div>
             </section>
         </section>
@@ -111,7 +113,8 @@
 
     <script>
         const socket = io();
-
+        const email = "<%= email %>"; // your server-side templating email injection if any
+        fetch('/my-shells-shipwrecked?onlyCreate=1') // creates user; fetches shells ;p 
         socket.on("connect", () => {
             console.log("Connected to server:", socket.id);
         });
@@ -141,6 +144,11 @@
             const btnHigherEl = document.getElementById('btn-higher');
             const btnLowerEl = document.getElementById('btn-lower');
             const btnNextRoundEl = document.getElementById('btn-next-round');
+
+            // Chat elements
+            const messagesEl = document.getElementById('messages');
+            const messageInputEl = document.getElementById('message-input');
+            const sendMessageEl = document.getElementById('send-message');
 
             // Templates
             const tplCard = document.getElementById('tpl-card');
@@ -274,7 +282,7 @@
             let lastState = null;
             let joinRequested = false;
 
-            // Event bindings
+            // Event bindings for game
             joinGameEl.addEventListener('click', function (e) {
                 e.preventDefault();
                 const displayName = displayNameEl.value.trim();
@@ -284,7 +292,7 @@
                 }
                 setStatus('joining central table…');
                 joinRequested = true;
-                socket.emit('joinTable', { displayName });
+                socket.emit('joinTable', { displayName, email });
             });
 
             betAmountEl.addEventListener('input', function () {
@@ -309,7 +317,7 @@
                 socket.emit('nextRound', {});
             });
 
-            // Socket handlers
+            // Socket handlers for game
             socket.on('state', (s) => {
                 lastState = s;
                 setBankroll(s.bankroll ?? 0);
@@ -356,17 +364,35 @@
                 // Server will emit a fresh 'state' after error.
             });
 
-            // Chat (local echo placeholder)
-            const messagesEl = document.getElementById('messages');
-            const messageInputEl = document.getElementById('message-input');
-            const sendMessageEl = document.getElementById('send-message');
-            sendMessageEl.addEventListener('click', function () {
+            // Chat message append helper
+            function appendMessage(text, isOwn = false) {
+                const li = document.createElement('li');
+                li.textContent = text;
+                if (isOwn) li.classList.add('own-message');
+                messagesEl.appendChild(li);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+
+            // Chat event bindings
+            sendMessageEl.addEventListener('click', () => {
                 const msg = messageInputEl.value.trim();
                 if (!msg) return;
-                const li = document.createElement('li');
-                li.textContent = msg;
-                messagesEl.appendChild(li);
+                socket.emit('chatMessage', msg);
+                appendMessage('You: ' + msg, true);
                 messageInputEl.value = '';
+            });
+
+            messageInputEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessageEl.click();
+                }
+            });
+
+            // Chat incoming message handler
+            socket.on('chatMessage', (data) => {
+                // data = { displayName: string, message: string }
+                console.log(data)
+                appendMessage(data.displayName + ': ' + data.message);
             });
 
             // Start at the lobby
