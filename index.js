@@ -4,7 +4,6 @@ const app = express();
 const http = require("http");
 const server = http.createServer(app);
 const io = require("socket.io")(server);
-<<<<<<< HEAD
 const passport = require('passport');
 const CustomStrategy = require('passport-custom').Strategy;
 const jwt = require('jsonwebtoken');
@@ -21,15 +20,6 @@ const sqliteAdapter = new SQLite.default({
 const keyv = new Keyv.Keyv({ store: sqliteAdapter });
 
 const { calculateProgressMetricsByEmail } = require('./get_shells');
-=======
-const passport = require("passport");
-const CustomStrategy = require("passport-custom").Strategy;
-const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
-const session = require("express-session");
-var FileStore = require("session-file-store")(session);
-const { calculateProgressMetricsByEmail } = require("./get_shells");
->>>>>>> refs/remotes/origin/master
 
 function calculateWinnings(guessType, guessNumber, actualNumber, bet) {
   let multiplier = 0;
