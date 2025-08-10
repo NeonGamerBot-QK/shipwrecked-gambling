@@ -36,7 +36,21 @@ const gameState = {
 
 // Utility for deck
 const suits = ["Hearts", "Diamonds", "Clubs", "Spades"];
-const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+const ranks = [
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "J",
+  "Q",
+  "K",
+  "A",
+];
 
 function drawRandomCard() {
   const rank = ranks[Math.floor(Math.random() * ranks.length)];
@@ -138,7 +152,10 @@ app.get("/gamble", (req, res) => {
   if (!req.session.passport) {
     return res.redirect("/login");
   }
-  res.render("index", { title: "Shipwrecked", email: req.session.passport.user });
+  res.render("index", {
+    title: "Shipwrecked",
+    email: req.session.passport.user,
+  });
 });
 app.get("/my-shells-shipwrecked", async (req, res) => {
   if (!req.session.passport) {
@@ -147,12 +164,12 @@ app.get("/my-shells-shipwrecked", async (req, res) => {
   // get user db entry
   const user = await keyv.get(req.session.passport.user);
   if (user && req.query.onlyCreate) {
-    return res.status(403).end()
+    return res.status(403).end();
   }
 
-  const shellD = !process.env.SHIPWRECKED_PSQL_URL ? { availableShells: 500 } : await calculateProgressMetricsByEmail(
-    req.session.passport.user,
-  );
+  const shellD = !process.env.SHIPWRECKED_PSQL_URL
+    ? { availableShells: 500 }
+    : await calculateProgressMetricsByEmail(req.session.passport.user);
   if (!user) {
     await keyv.set(req.session.passport.user, {
       shell_count: shellD.availableShells,
@@ -198,7 +215,7 @@ io.on("connection", (socket) => {
       socket.emit("error", { message: "Invalid display name" });
       return;
     }
-    const dbEntry = await keyv.get(email)
+    const dbEntry = await keyv.get(email);
     const player = players.get(socket.id);
     player.displayName = displayName;
     player.email = email;
@@ -258,7 +275,7 @@ io.on("connection", (socket) => {
     const currentVal = rankValue(player.currentCard);
     const nextVal = rankValue(player.nextCard);
     let outcome = "lose";
-    const dbEntry = await keyv.get(player.email)
+    const dbEntry = await keyv.get(player.email);
 
     if (nextVal === currentVal) {
       // Tie counts as loss or push? Here treat as loss
@@ -271,18 +288,18 @@ io.on("connection", (socket) => {
       player.bankroll += player.currentBet;
       dbEntry.payouts.push({
         amount: player.currentBet,
-        outcome
-      })
+        outcome,
+      });
     } else {
       player.bankroll -= player.currentBet;
       dbEntry.payouts.push({
         amount: -player.currentBet,
-        outcome
+        outcome,
       });
     }
 
     dbEntry.shell_count = player.bankroll;
-    await keyv.set(player.email, dbEntry)
+    await keyv.set(player.email, dbEntry);
     player.roundState = "resolved";
     player.lastNextCard = player.nextCard;
     player.lastOutcome = outcome;
@@ -334,5 +351,7 @@ io.on("connection", (socket) => {
   });
 });
 server.listen(3001, () => {
-  console.log(`Server is running on http://localhost:3001 (or http://shipwrecked-gamble.saahild.com)`);
+  console.log(
+    `Server is running on http://localhost:3001 (or http://shipwrecked-gamble.saahild.com)`,
+  );
 });
