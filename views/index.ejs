@@ -1,270 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Shipwrecked Blackjack — Multiplayer</title>
-  <meta name="theme-color" content="#0b6b3a" />
-  <!-- Tailwind (CDN for hackathon simplicity) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Custom app CSS -->
-  <link rel="stylesheet" href="/css/app.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shipwrecked Blackjack — Multiplayer</title>
+    <meta name="theme-color" content="#0b6b3a" />
+    <!-- <script src="/node_modules/socket.io/client-dist/socket.io.min.js"></script> -->
+    <!-- Tailwind (CDN for hackathon simplicity) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <!-- Custom app CSS -->
+    <link rel="stylesheet" href="/css/app.css" />
 </head>
+
 <body class="min-h-screen bg-slate-900 text-slate-100">
-  <!-- App Header -->
-  <header class="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 py-3 border-b border-white/10 bg-white/5 backdrop-blur">
-    <h1 class="text-xl font-semibold">Shipwrecked Blackjack</h1>
-    <div id="app-status" aria-live="polite" class="text-sm text-slate-400">Status: idle</div>
-  </header>
+    <!-- App Header -->
+    <header
+        class="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 py-3 border-b border-white/10 bg-white/5 backdrop-blur">
+        <h1 class="text-xl font-semibold">Shipwrecked Blackjack</h1>
+        <div id="app-status" aria-live="polite" class="text-sm text-slate-400">Status: idle</div>
+    </header>
 
-  <main class="grid grid-cols-1 lg:[grid-template-columns:minmax(260px,360px)_1fr] gap-4 p-4 items-start">
-    <!-- Lobby Section -->
-    <section id="lobby" aria-label="Lobby" class="bg-white/5 border border-white/10 rounded-xl p-3">
-      <h2 class="text-lg font-semibold mb-2">Lobby</h2>
+    <main class="grid grid-cols-1 lg:[grid-template-columns:minmax(260px,360px)_1fr] gap-4 p-4 items-start">
+        <!-- Lobby Section -->
+        <section id="lobby" aria-label="Lobby" class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <h2 class="text-lg font-semibold mb-2">Lobby</h2>
 
-      <div id="identity" class="mb-2">
-        <label for="display-name" class="block text-slate-400 text-sm mb-1">Display Name</label>
-        <input id="display-name" name="displayName" type="text" placeholder="Your name" autocomplete="off"
-               class="w-full max-w-sm rounded-md border border-white/20 bg-white/10 px-3 py-2" />
-      </div>
+            <div id="identity" class="mb-2">
+                <label for="display-name" class="block text-slate-400 text-sm mb-1">Display Name</label>
+                <input id="display-name" name="displayName" type="text" placeholder="Your name" autocomplete="off"
+                    class="w-full max-w-sm rounded-md border border-white/20 bg-white/10 px-3 py-2" />
+            </div>
 
-      <div id="lobby-controls" class="grid gap-2">
-        <form id="create-form" class="flex flex-wrap items-center gap-2">
-          <button type="submit" id="create-table"
-                  class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Create Table</button>
-        </form>
+            <div id="lobby-controls" class="grid gap-2">
+                <form id="create-form" class="flex flex-wrap items-center gap-2">
+                    <button type="submit" id="create-table"
+                        class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Create
+                        Table</button>
+                </form>
 
-        <form id="join-form" class="flex flex-wrap items-center gap-2">
-          <label for="room-code" class="text-slate-400 text-sm">Room Code</label>
-          <input id="room-code" name="roomCode" type="text" placeholder="e.g. ABC123" autocomplete="off"
-                 class="rounded-md border border-white/20 bg-white/10 px-3 py-2" />
-          <button type="submit" id="join-table"
-                  class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Join Table</button>
-        </form>
-      </div>
+                <form id="join-form" class="flex flex-wrap items-center gap-2">
+                    <label for="room-code" class="text-slate-400 text-sm">Room Code</label>
+                    <input id="room-code" name="roomCode" type="text" placeholder="e.g. ABC123" autocomplete="off"
+                        class="rounded-md border border-white/20 bg-white/10 px-3 py-2" />
+                    <button type="submit" id="join-table"
+                        class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Join
+                        Table</button>
+                </form>
+            </div>
 
-      <div id="rooms" class="mt-3">
-        <h3 class="font-medium mb-1">Available Rooms</h3>
-        <ul id="rooms-list" aria-live="polite" class="grid gap-1 list-none p-0 m-0"></ul>
-        <!-- TODO: Populate rooms list from server later -->
-      </div>
-    </section>
+            <div id="rooms" class="mt-3">
+                <h3 class="font-medium mb-1">Available Rooms</h3>
+                <ul id="rooms-list" aria-live="polite" class="grid gap-1 list-none p-0 m-0"></ul>
+                <!-- TODO: Populate rooms list from server later -->
+            </div>
+        </section>
 
-    <!-- Table Section: dealer, virtual surface, players, actions -->
-    <section id="table" aria-label="Table" hidden class="bg-white/5 border border-white/10 rounded-xl p-3">
-      <h2 class="text-lg font-semibold mb-2">Table</h2>
+        <!-- Table Section: dealer, virtual surface, players, actions -->
+        <section id="table" aria-label="Table" hidden class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <h2 class="text-lg font-semibold mb-2">Table</h2>
 
-      <div id="table-meta" class="mb-2 text-slate-400">
-        <span id="table-code-label">Room:</span>
-        <strong id="table-code-value">—</strong>
-      </div>
+            <div id="table-meta" class="mb-2 text-slate-400">
+                <span id="table-code-label">Room:</span>
+                <strong id="table-code-value">—</strong>
+            </div>
 
-      <div id="table-viewport" aria-label="Virtual table">
-        <div id="table-surface" role="img" aria-label="Blackjack table surface">
-          <div id="table-markings" aria-hidden="true">
-            <div class="arc"></div>
-            <div class="payout">SHIPWRECKED BLACKJACK — BLACKJACK PAYS 3 TO 2</div>
-          </div>
+            <div id="table-viewport" aria-label="Virtual table">
+                <div id="table-surface" role="img" aria-label="Blackjack table surface">
+                    <div id="table-markings" aria-hidden="true">
+                        <div class="arc"></div>
+                        <div class="payout">SHIPWRECKED BLACKJACK — BLACKJACK PAYS 3 TO 2</div>
+                    </div>
 
-          <div id="dealer" class="text-center">
-            <h3 class="font-medium">Dealer</h3>
-            <div id="dealer-hand" class="hand" aria-live="polite"></div>
-            <div id="dealer-total" aria-live="polite" class="text-slate-400 text-sm">Total: —</div>
-          </div>
+                    <div id="dealer" class="text-center">
+                        <h3 class="font-medium">Dealer</h3>
+                        <div id="dealer-hand" class="hand" aria-live="polite"></div>
+                        <div id="dealer-total" aria-live="polite" class="text-slate-400 text-sm">Total: —</div>
+                    </div>
 
-          <!-- Seat placeholders (for quick visual reference; actual players render dynamically) -->
-          <ul id="seats" aria-label="Seats">
-            <li class="seat" data-seat="1"><div class="bet-spot" aria-hidden="true"></div><div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span></div></li>
-            <li class="seat" data-seat="2"><div class="bet-spot" aria-hidden="true"></div><div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span></div></li>
-            <li class="seat" data-seat="3"><div class="bet-spot" aria-hidden="true"></div><div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span></div></li>
-            <li class="seat" data-seat="4"><div class="bet-spot" aria-hidden="true"></div><div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span></div></li>
-            <li class="seat" data-seat="5"><div class="bet-spot" aria-hidden="true"></div><div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span></div></li>
-            <li class="seat" data-seat="6"><div class="bet-spot" aria-hidden="true"></div><div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span></div></li>
-          </ul>
+                    <!-- Seat placeholders (for quick visual reference; actual players render dynamically) -->
+                    <ul id="seats" aria-label="Seats">
+                        <li class="seat" data-seat="1">
+                            <div class="bet-spot" aria-hidden="true"></div>
+                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
+                            </div>
+                        </li>
+                        <li class="seat" data-seat="2">
+                            <div class="bet-spot" aria-hidden="true"></div>
+                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
+                            </div>
+                        </li>
+                        <li class="seat" data-seat="3">
+                            <div class="bet-spot" aria-hidden="true"></div>
+                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
+                            </div>
+                        </li>
+                        <li class="seat" data-seat="4">
+                            <div class="bet-spot" aria-hidden="true"></div>
+                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
+                            </div>
+                        </li>
+                        <li class="seat" data-seat="5">
+                            <div class="bet-spot" aria-hidden="true"></div>
+                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
+                            </div>
+                        </li>
+                        <li class="seat" data-seat="6">
+                            <div class="bet-spot" aria-hidden="true"></div>
+                            <div class="meta"><span class="seat-name">Open Seat</span><span class="seat-chips">—</span>
+                            </div>
+                        </li>
+                    </ul>
 
-          <!-- Players container (dynamic) -->
-          <div id="players" aria-label="Players"></div>
+                    <!-- Players container (dynamic) -->
+                    <div id="players" aria-label="Players"></div>
+                </div>
+            </div>
+
+            <div id="betting" class="mt-3 flex flex-wrap items-center gap-2">
+                <h3 class="font-medium">Betting</h3>
+                <label for="bet-amount" class="text-slate-400 text-sm">Bet</label>
+                <input id="bet-amount" name="betAmount" type="number" min="1" step="1" placeholder="10"
+                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 w-24" />
+                <button id="place-bet" disabled
+                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Place
+                    Bet</button>
+                <!-- TODO: Enable when betting phase starts -->
+            </div>
+
+            <div id="actions" aria-label="Player Actions" class="mt-3 flex flex-wrap items-center gap-2">
+                <button id="btn-hit" disabled
+                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Hit</button>
+                <button id="btn-stand" disabled
+                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Stand</button>
+                <button id="btn-double" disabled
+                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Double</button>
+                <button id="btn-split" disabled
+                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Split</button>
+                <!-- TODO: Enable/disable based on game state and hand -->
+            </div>
+        </section>
+
+        <!-- Chat Section -->
+        <section id="chat" aria-label="Chat" hidden class="bg-white/5 border border-white/10 rounded-xl p-3">
+            <h2 class="text-lg font-semibold mb-2">Table Chat</h2>
+            <ul id="messages" aria-live="polite"
+                class="list-none m-0 p-2 min-h-[120px] max-h-[240px] overflow-auto bg-black/20 border border-white/10 rounded-lg">
+            </ul>
+            <div id="chat-input" class="mt-2 flex items-center gap-2">
+                <input id="message-input" type="text" placeholder="Type a message…" autocomplete="off"
+                    class="flex-1 rounded-md border border-white/20 bg-white/10 px-3 py-2" />
+                <button id="send-message"
+                    class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Send</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Templates (for client-side rendering) -->
+    <template id="tpl-player">
+        <div class="player" data-player-id="">
+            <div class="player-header">
+                <span class="player-name"></span>
+                <span class="player-chips"></span>
+                <span class="player-bet"></span>
+            </div>
+            <div class="player-hands"></div>
+            <div class="player-total"></div>
         </div>
-      </div>
+    </template>
 
-      <div id="betting" class="mt-3 flex flex-wrap items-center gap-2">
-        <h3 class="font-medium">Betting</h3>
-        <label for="bet-amount" class="text-slate-400 text-sm">Bet</label>
-        <input id="bet-amount" name="betAmount" type="number" min="1" step="1" placeholder="10"
-               class="rounded-md border border-white/20 bg-white/10 px-3 py-2 w-24" />
-        <button id="place-bet" disabled
-                class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Place Bet</button>
-        <!-- TODO: Enable when betting phase starts -->
-      </div>
+    <template id="tpl-card">
+        <div class="card" data-rank="" data-suit="" aria-label="Card"></div>
+    </template>
 
-      <div id="actions" aria-label="Player Actions" class="mt-3 flex flex-wrap items-center gap-2">
-        <button id="btn-hit" disabled class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Hit</button>
-        <button id="btn-stand" disabled class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Stand</button>
-        <button id="btn-double" disabled class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Double</button>
-        <button id="btn-split" disabled class="rounded-md border border-white/20 bg-white/10 px-3 py-2 opacity-50 cursor-not-allowed">Split</button>
-        <!-- TODO: Enable/disable based on game state and hand -->
-      </div>
-    </section>
+    <!-- Minimal bootstrap script (no networking yet) -->
+    <script>
+        const socket = io()
 
-    <!-- Chat Section -->
-    <section id="chat" aria-label="Chat" hidden class="bg-white/5 border border-white/10 rounded-xl p-3">
-      <h2 class="text-lg font-semibold mb-2">Table Chat</h2>
-      <ul id="messages" aria-live="polite"
-          class="list-none m-0 p-2 min-h-[120px] max-h-[240px] overflow-auto bg-black/20 border border-white/10 rounded-lg"></ul>
-      <div id="chat-input" class="mt-2 flex items-center gap-2">
-        <input id="message-input" type="text" placeholder="Type a message…" autocomplete="off"
-               class="flex-1 rounded-md border border-white/20 bg-white/10 px-3 py-2" />
-        <button id="send-message"
-                class="rounded-md border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/15">Send</button>
-      </div>
-    </section>
-  </main>
-
-  <!-- Templates (for client-side rendering) -->
-  <template id="tpl-player">
-    <div class="player" data-player-id="">
-      <div class="player-header">
-        <span class="player-name"></span>
-        <span class="player-chips"></span>
-        <span class="player-bet"></span>
-      </div>
-      <div class="player-hands"></div>
-      <div class="player-total"></div>
-    </div>
-  </template>
-
-  <template id="tpl-card">
-    <div class="card" data-rank="" data-suit="" aria-label="Card"></div>
-  </template>
-
-  <!-- Minimal bootstrap script (no networking yet) -->
-  <script>
-    (function () {
-      // Sections
-      const lobbyEl = document.getElementById('lobby');
-      const tableEl = document.getElementById('table');
-      const chatEl = document.getElementById('chat');
-
-      // Status
-      const statusEl = document.getElementById('app-status');
-
-      // Lobby controls
-      const displayNameEl = document.getElementById('display-name');
-      const createFormEl = document.getElementById('create-form');
-      const joinFormEl = document.getElementById('join-form');
-      const roomCodeEl = document.getElementById('room-code');
-      const roomsListEl = document.getElementById('rooms-list');
-
-      // Table elements
-      const tableCodeValueEl = document.getElementById('table-code-value');
-      const dealerHandEl = document.getElementById('dealer-hand');
-      const dealerTotalEl = document.getElementById('dealer-total');
-      const playersEl = document.getElementById('players');
-
-      // Betting/action controls
-      const betAmountEl = document.getElementById('bet-amount');
-      const placeBetEl = document.getElementById('place-bet');
-      const btnHitEl = document.getElementById('btn-hit');
-      const btnStandEl = document.getElementById('btn-stand');
-      const btnDoubleEl = document.getElementById('btn-double');
-      const btnSplitEl = document.getElementById('btn-split');
-
-      // Chat
-      const messagesEl = document.getElementById('messages');
-      const messageInputEl = document.getElementById('message-input');
-      const sendMessageEl = document.getElementById('send-message');
-
-      // Templates
-      const tplPlayer = document.getElementById('tpl-player');
-      const tplCard = document.getElementById('tpl-card');
-
-      // Small, multiplayer-friendly update scheduler to batch DOM writes
-      let q = [];
-      let raf = null;
-      function schedule(fn){
-        q.push(fn);
-        if(raf===null){
-          raf = requestAnimationFrame(() => {
-            const tasks = q; q = []; raf = null;
-            for (let i=0;i<tasks.length;i++) tasks[i]();
-          });
-        }
-      }
-
-      function setStatus(text) {
-        schedule(() => { statusEl.textContent = 'Status: ' + text; });
-      }
-
-      function showLobby() {
-        schedule(() => {
-          lobbyEl.hidden = false;
-          tableEl.hidden = true;
-          chatEl.hidden = true;
+        // Listen for connection
+        socket.on("connect", () => {
+            console.log("Connected to server:", socket.id);
         });
-      }
 
-      function showTable() {
-        schedule(() => {
-          lobbyEl.hidden = true;
-          tableEl.hidden = false;
-          chatEl.hidden = false;
-        });
-      }
+        (function () {
+            // Sections
+            const lobbyEl = document.getElementById('lobby');
+            const tableEl = document.getElementById('table');
+            const chatEl = document.getElementById('chat');
 
-      // Placeholder navigation (to be replaced when server events are added)
-      createFormEl.addEventListener('submit', function (e) {
-        e.preventDefault();
-        setStatus('creating table…');
-        // TODO: Request server to create a room; receive room code
-        tableCodeValueEl.textContent = 'TBD';
-        showTable();
-      });
+            // Status
+            const statusEl = document.getElementById('app-status');
 
-      joinFormEl.addEventListener('submit', function (e) {
-        e.preventDefault();
-        setStatus('joining table…');
-        // TODO: Request server to join roomCodeEl.value
-        tableCodeValueEl.textContent = roomCodeEl.value || '—';
-        showTable();
-      });
+            // Lobby controls
+            const displayNameEl = document.getElementById('display-name');
+            const createFormEl = document.getElementById('create-form');
+            const joinFormEl = document.getElementById('join-form');
+            const roomCodeEl = document.getElementById('room-code');
+            const roomsListEl = document.getElementById('rooms-list');
 
-      placeBetEl.addEventListener('click', function () {
-        // TODO: Send betAmountEl.value to server
-      });
+            // Table elements
+            const tableCodeValueEl = document.getElementById('table-code-value');
+            const dealerHandEl = document.getElementById('dealer-hand');
+            const dealerTotalEl = document.getElementById('dealer-total');
+            const playersEl = document.getElementById('players');
 
-      btnHitEl.addEventListener('click', function () {
-        // TODO: Send "hit"
-      });
+            // Betting/action controls
+            const betAmountEl = document.getElementById('bet-amount');
+            const placeBetEl = document.getElementById('place-bet');
+            const btnHitEl = document.getElementById('btn-hit');
+            const btnStandEl = document.getElementById('btn-stand');
+            const btnDoubleEl = document.getElementById('btn-double');
+            const btnSplitEl = document.getElementById('btn-split');
 
-      btnStandEl.addEventListener('click', function () {
-        // TODO: Send "stand"
-      });
+            // Chat
+            const messagesEl = document.getElementById('messages');
+            const messageInputEl = document.getElementById('message-input');
+            const sendMessageEl = document.getElementById('send-message');
 
-      btnDoubleEl.addEventListener('click', function () {
-        // TODO: Send "double"
-      });
+            // Templates
+            const tplPlayer = document.getElementById('tpl-player');
+            const tplCard = document.getElementById('tpl-card');
 
-      btnSplitEl.addEventListener('click', function () {
-        // TODO: Send "split"
-      });
+            // Small, multiplayer-friendly update scheduler to batch DOM writes
+            let q = [];
+            let raf = null;
+            function schedule(fn) {
+                q.push(fn);
+                if (raf === null) {
+                    raf = requestAnimationFrame(() => {
+                        const tasks = q; q = []; raf = null;
+                        for (let i = 0; i < tasks.length; i++) tasks[i]();
+                    });
+                }
+            }
 
-      sendMessageEl.addEventListener('click', function () {
-        const msg = messageInputEl.value.trim();
-        if (!msg) return;
-        // TODO: Emit chat message to server
-        const li = document.createElement('li');
-        li.textContent = msg;
-        messagesEl.appendChild(li);
-        messageInputEl.value = '';
-      });
+            function setStatus(text) {
+                schedule(() => { statusEl.textContent = 'Status: ' + text; });
+            }
 
-      // TODO: Socket wiring (e.g., socket.io) will be added later
-      // TODO: Rendering helpers and keyed diffing will be added later
+            function showLobby() {
+                schedule(() => {
+                    lobbyEl.hidden = false;
+                    tableEl.hidden = true;
+                    chatEl.hidden = true;
+                });
+            }
 
-      // Start at the lobby
-      setStatus('idle');
-      showLobby();
-    })();
-  </script>
+            function showTable() {
+                schedule(() => {
+                    lobbyEl.hidden = true;
+                    tableEl.hidden = false;
+                    chatEl.hidden = false;
+                });
+            }
+
+            // Placeholder navigation (to be replaced when server events are added)
+            createFormEl.addEventListener('submit', function (e) {
+                e.preventDefault();
+                setStatus('creating table…');
+                // TODO: Request server to create a room; receive room code
+                tableCodeValueEl.textContent = 'TBD';
+                showTable();
+            });
+
+            joinFormEl.addEventListener('submit', function (e) {
+                e.preventDefault();
+                setStatus('joining table…');
+                // TODO: Request server to join roomCodeEl.value
+                tableCodeValueEl.textContent = roomCodeEl.value || '—';
+                showTable();
+            });
+
+            placeBetEl.addEventListener('click', function () {
+                // TODO: Send betAmountEl.value to server
+            });
+
+            btnHitEl.addEventListener('click', function () {
+                // TODO: Send "hit"
+            });
+
+            btnStandEl.addEventListener('click', function () {
+                // TODO: Send "stand"
+            });
+
+            btnDoubleEl.addEventListener('click', function () {
+                // TODO: Send "double"
+            });
+
+            btnSplitEl.addEventListener('click', function () {
+                // TODO: Send "split"
+            });
+
+            sendMessageEl.addEventListener('click', function () {
+                const msg = messageInputEl.value.trim();
+                if (!msg) return;
+                // TODO: Emit chat message to server
+                const li = document.createElement('li');
+                li.textContent = msg;
+                messagesEl.appendChild(li);
+                messageInputEl.value = '';
+            });
+
+            // TODO: Socket wiring (e.g., socket.io) will be added later
+            // TODO: Rendering helpers and keyed diffing will be added later
+
+            // Start at the lobby
+            setStatus('idle');
+            showLobby();
+        })();
+    </script>
 </body>
+
 </html>
