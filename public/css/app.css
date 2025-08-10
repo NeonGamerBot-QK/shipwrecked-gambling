@@ -217,6 +217,7 @@
   align-items: center;
 }
 .card {
+  position: relative;
   width: 34px;
   height: 48px;
   border-radius: 4px;
@@ -224,6 +225,35 @@
   border: 1px solid rgba(0, 0, 0, 0.15);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   will-change: transform;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px;
+  color: #000;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.card .rank {
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.card .suit {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.card .suit[data-suit="♥"],
+.card .suit[data-suit="♦"] {
+  color: #dc2626;
+}
+
+.card .suit[data-suit="♠"],
+.card .suit[data-suit="♣"] {
+  color: #000;
 }
 
 /* Chat messages container optimization */
@@ -279,8 +309,21 @@
 
 /* Slightly larger card visual in Hi-Lo hosts without changing .card elsewhere */
 .card-host .card {
+  width: 60px;
+  height: 84px;
+  font-size: 16px;
   transform: scale(1.1);
   transform-origin: center;
+}
+
+.card-host .card .rank {
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+.card-host .card .suit {
+  font-size: 24px;
+  margin-bottom: 4px;
 }
 
 /* Actions */
