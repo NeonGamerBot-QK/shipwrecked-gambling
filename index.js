@@ -350,7 +350,7 @@ io.on("connection", (socket) => {
     players.delete(socket.id);
   });
 });
-server.listen(3001, () => {
+server.listen(process.env.PORT || 3001, () => {
   console.log(
     `Server is running on http://localhost:3001 (or http://shipwrecked-gamble.saahild.com)`,
   );
